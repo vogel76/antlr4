@@ -95,7 +95,7 @@ std::vector<DFAState *> DFA::getStates() const {
     return o1->stateNumber < o2->stateNumber;
   });
 
-  return result;
+  return std::move(result);
 }
 
 std::string DFA::toString(const std::vector<std::string> &tokenNames) {

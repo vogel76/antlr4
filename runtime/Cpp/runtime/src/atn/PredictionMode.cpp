@@ -62,7 +62,7 @@ bool PredictionModeClass::hasSLLConflictTerminatingPrediction(PredictionMode mod
     // dup configs, tossing out semantic predicates
     ATNConfigSet dup(true);
     for (auto &config : configs->configs) {
-      Ref<ATNConfig> c = std::make_shared<ATNConfig>(config, SemanticContext::NONE);
+      Ref<ATNConfig> c = ATNConfig::create(config, SemanticContext::NONE);
       dup.add(c);
     }
     std::vector<antlrcpp::BitSet> altsets = getConflictingAltSubsets(&dup);
@@ -142,7 +142,7 @@ size_t PredictionModeClass::getUniqueAlt(const std::vector<antlrcpp::BitSet>& al
 
 antlrcpp::BitSet PredictionModeClass::getAlts(const std::vector<antlrcpp::BitSet>& altsets) {
   antlrcpp::BitSet all;
-  for (antlrcpp::BitSet alts : altsets) {
+  for (const antlrcpp::BitSet& alts : altsets) {
     all |= alts;
   }
 
@@ -152,7 +152,7 @@ antlrcpp::BitSet PredictionModeClass::getAlts(const std::vector<antlrcpp::BitSet
 antlrcpp::BitSet PredictionModeClass::getAlts(ATNConfigSet *configs) {
   antlrcpp::BitSet alts;
   for (auto &config : configs->configs) {
-    alts.set(config->alt);
+    alts.setBit(config->alt);
   }
   return alts;
 }
@@ -160,21 +160,23 @@ antlrcpp::BitSet PredictionModeClass::getAlts(ATNConfigSet *configs) {
 std::vector<antlrcpp::BitSet> PredictionModeClass::getConflictingAltSubsets(ATNConfigSet *configs) {
   std::unordered_map<ATNConfig *, antlrcpp::BitSet, AltAndContextConfigHasher, AltAndContextConfigComparer> configToAlts;
   for (auto &config : configs->configs) {
-    configToAlts[config.get()].set(config->alt);
+    configToAlts[config.get()].setBit(config->alt);
   }
   std::vector<antlrcpp::BitSet> values;
   for (auto it : configToAlts) {
     values.push_back(it.second);
   }
-  return values;
+
+  return std::move(values);
 }
 
 std::map<ATNState*, antlrcpp::BitSet> PredictionModeClass::getStateToAltMap(ATNConfigSet *configs) {
   std::map<ATNState*, antlrcpp::BitSet> m;
   for (auto &c : configs->configs) {
-    m[c->state].set(c->alt);
+    m[c->state].setBit(c->alt);
   }
-  return m;
+  
+  return std::move(m);
 }
 
 bool PredictionModeClass::hasStateAssociatedWithOneAlt(ATNConfigSet *configs) {
@@ -190,7 +192,7 @@ size_t PredictionModeClass::getSingleViableAlt(const std::vector<antlrcpp::BitSe
   for (antlrcpp::BitSet alts : altsets) {
     size_t minAlt = alts.nextSetBit(0);
 
-    viableAlts.set(minAlt);
+    viableAlts.setBit(minAlt);
     if (viableAlts.count() > 1)  // more than 1 viable alt
     {
       return ATN::INVALID_ALT_NUMBER;

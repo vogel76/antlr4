@@ -70,6 +70,23 @@ namespace misc {
 
       return finish(hash, data.size());
     }
+
+    /// Utility function to compute the hash code of an array using the MurmurHash3 algorithm.
+    ///
+    /// @param <A> the first's pair element type </param>
+    /// @param <B> the second's pair element type </param>
+    /// <param name="data"> the input data to calculate hash for</param>
+    /// <param name="seed"> the seed for the MurmurHash algorithm </param>
+    /// <returns> the hash code of the data </returns>
+    template <class A, class B>
+    static size_t hashCode(const std::pair<A, B>& data, size_t seed)
+      {
+      size_t hashValue = initialize(seed);
+      hashValue = update(hashValue, data.first);
+      hashValue = update(hashValue, data.second);
+      
+      return finish(hashValue, 2);
+      }
   };
 
 } // namespace atn

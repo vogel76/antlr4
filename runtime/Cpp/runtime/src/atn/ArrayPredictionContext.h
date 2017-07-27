@@ -15,27 +15,34 @@ namespace atn {
 
   class ANTLR4CPP_PUBLIC ArrayPredictionContext : public PredictionContext {
   public:
+    typedef std::vector<Ref<PredictionContext>> TPredictionContextContainer;
+    typedef std::vector<size_t> TReturnStateContainer;
+
+    typedef std::pair<const Ref<PredictionContext>*, const Ref<PredictionContext>*>
+      TParentPredictionContextStorageRange;
+    typedef std::pair<const size_t*, const size_t*> TReturnStateStorageRange;
+
+    virtual TParentPredictionContextStorageRange getStorageRanges(
+      TReturnStateStorageRange* rangeStorage = nullptr) const = 0;
+
     /// Parent can be empty only if full ctx mode and we make an array
     /// from EMPTY and non-empty. We merge EMPTY by using null parent and
     /// returnState == EMPTY_RETURN_STATE.
     // Also here: we use a strong reference to our parents to avoid having them freed prematurely.
     //            See also SinglePredictionContext.
-    const std::vector<Ref<PredictionContext>> parents;
+    static Ref<ArrayPredictionContext> makePredictionContext(TPredictionContextContainer&& parents,
+      TReturnStateContainer&& returnStates);
 
-    /// Sorted for merge, no duplicates; if present, EMPTY_RETURN_STATE is always last.
-    const std::vector<size_t> returnStates;
+    static Ref<ArrayPredictionContext> makePredictionContext(TPredictionContextContainer&& parents,
+      const TReturnStateStorageRange& returnStateSource);
 
-    ArrayPredictionContext(Ref<SingletonPredictionContext> const& a);
-    ArrayPredictionContext(std::vector<Ref<PredictionContext>> const& parents_, std::vector<size_t> const& returnStates);
-    virtual ~ArrayPredictionContext();
+    static Ref<ArrayPredictionContext> makePredictionContext(
+      const Ref<SingletonPredictionContext>& parent);
 
-    virtual bool isEmpty() const override;
-    virtual size_t size() const override;
-    virtual Ref<PredictionContext> getParent(size_t index) const override;
-    virtual size_t getReturnState(size_t index) const override;
-    bool operator == (const PredictionContext &o) const override;
+    virtual ~ArrayPredictionContext() {}
 
-    virtual std::string toString() const override;
+  protected:
+    ArrayPredictionContext(size_t cachedHashCode) : PredictionContext(cachedHashCode) {}
   };
 
 } // namespace atn

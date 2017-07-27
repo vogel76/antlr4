@@ -20,17 +20,30 @@ namespace atn {
   public:
     struct Hasher
     {
-      size_t operator()(ATNConfig const& k) const {
+      size_t operator()(const ATNConfig& k) const
+        {
         return k.hashCode();
-      }
+        }
+
+      size_t operator()(const Ref<ATNConfig>& k) const
+        {
+        return k->hashCode();
+        }
+
     };
 
-    struct Comparer {
-      bool operator()(ATNConfig const& lhs, ATNConfig const& rhs) const {
+    struct Comparer
+      {
+      bool operator()(const ATNConfig& lhs, const ATNConfig& rhs) const
+        {
         return (&lhs == &rhs) || (lhs == rhs);
-      }
-    };
+        }
 
+      bool operator()(const Ref<ATNConfig>& lhs, const Ref<ATNConfig>& rhs) const
+        {
+        return (lhs.get() == rhs.get()) || (*lhs == *rhs);
+        }
+    };
 
     using Set = std::unordered_set<Ref<ATNConfig>, Hasher, Comparer>;
 
@@ -75,6 +88,12 @@ namespace atn {
     /// Can be shared between multiple ATNConfig instances.
     Ref<SemanticContext> semanticContext;
 
+    template <class... _Types>
+    static Ref<ATNConfig> create(_Types&&... _Args)
+      {
+      return std::make_shared<ATNConfig>(_Args...);
+      }
+
     ATNConfig(ATNState *state, size_t alt, Ref<PredictionContext> const& context);
     ATNConfig(ATNState *state, size_t alt, Ref<PredictionContext> const& context, Ref<SemanticContext> const& semanticContext);
 
@@ -100,11 +119,16 @@ namespace atn {
     bool isPrecedenceFilterSuppressed() const;
     void setPrecedenceFilterSuppressed(bool value);
 
+    bool operator < (const ATNConfig& rhs) const;
+
     /// An ATN configuration is equal to another if both have
     /// the same state, they predict the same alternative, and
     /// syntactic/semantic contexts are the same.
     bool operator == (const ATNConfig &other) const;
-    bool operator != (const ATNConfig &other) const;
+    bool operator != (const ATNConfig &other) const
+      {
+      return !operator==(other);
+      }
 
     virtual std::string toString();
     std::string toString(bool showAlt);
