@@ -15,34 +15,17 @@ namespace atn {
   /// graph-structured stack.
   class ANTLR4CPP_PUBLIC ATNConfigSet {
   public:
-    /// Track the elements as they are added to the set; supports get(i)
-    std::vector<Ref<ATNConfig>> configs;
-
-    // TO_DO: these fields make me pretty uncomfortable but nice to pack up info together, saves recomputation
-    // TO_DO: can we track conflicts as they are added to save scanning configs later?
-    size_t uniqueAlt;
-
-    /** Currently this is only used when we detect SLL conflict; this does
-     *  not necessarily represent the ambiguous alternatives. In fact,
-     *  I should also point out that this seems to include predicated alternatives
-     *  that have predicates that evaluate to false. Computed in computeTargetState().
-     */
-    antlrcpp::BitSet conflictingAlts;
-
-    // Used in parser and lexer. In lexer, it indicates we hit a pred
-    // while computing a closure operation.  Don't make a DFA state from this.
-    bool hasSemanticContext;
-    bool dipsIntoOuterContext;
-
-    /// Indicates that this configuration set is part of a full context
-    /// LL prediction. It will be used to determine how to merge $. With SLL
-    /// it's a wildcard whereas it is not for LL context merge.
-    const bool fullCtx;
+    typedef std::vector<Ref<ATNConfig>> TATNConfigContainer;
 
     ATNConfigSet(bool fullCtx = true);
     ATNConfigSet(const Ref<ATNConfigSet> &old);
 
     virtual ~ATNConfigSet();
+
+    const TATNConfigContainer& getConfigs() const
+      {
+      return configs;
+      }
 
     virtual bool add(const Ref<ATNConfig> &config);
 
@@ -68,7 +51,7 @@ namespace atn {
      *
      * @since 4.3
      */
-    antlrcpp::BitSet getAlts();
+    antlrcpp::BitSet getAlts() const;
     virtual std::vector<Ref<SemanticContext>> getPredicates();
 
     virtual Ref<ATNConfig> get(size_t i) const;
@@ -77,7 +60,9 @@ namespace atn {
 
     bool addAll(const Ref<ATNConfigSet> &other);
 
-    bool operator == (const ATNConfigSet &other);
+    bool operator < (const ATNConfigSet &rhs) const;
+    bool operator == (const ATNConfigSet &other) const;
+
     virtual size_t hashCode();
     virtual size_t size();
     virtual bool isEmpty();
@@ -85,6 +70,30 @@ namespace atn {
     virtual bool isReadonly();
     virtual void setReadonly(bool readonly);
     virtual std::string toString();
+
+    /// Track the elements as they are added to the set; supports get(i)
+    TATNConfigContainer configs;
+
+    // TO_DO: these fields make me pretty uncomfortable but nice to pack up info together, saves recomputation
+    // TO_DO: can we track conflicts as they are added to save scanning configs later?
+    size_t uniqueAlt;
+
+    /** Currently this is only used when we detect SLL conflict; this does
+     *  not necessarily represent the ambiguous alternatives. In fact,
+     *  I should also point out that this seems to include predicated alternatives
+     *  that have predicates that evaluate to false. Computed in computeTargetState().
+     */
+    antlrcpp::BitSet conflictingAlts;
+
+    // Used in parser and lexer. In lexer, it indicates we hit a pred
+    // while computing a closure operation.  Don't make a DFA state from this.
+    bool hasSemanticContext;
+    bool dipsIntoOuterContext;
+
+    /// Indicates that this configuration set is part of a full context
+    /// LL prediction. It will be used to determine how to merge $. With SLL
+    /// it's a wildcard whereas it is not for LL context merge.
+    const bool fullCtx;
 
   protected:
     /// Indicates that the set of configurations is read-only. Do not
@@ -101,7 +110,7 @@ namespace atn {
 
     /// All configs but hashed by (s, i, _, pi) not including context. Wiped out
     /// when we go readonly as this set becomes a DFA state.
-    std::unordered_map<size_t, ATNConfig *> _configLookup;
+    std::map<size_t, ATNConfig *> _configLookup;
 
     void InitializeInstanceFields();
   };

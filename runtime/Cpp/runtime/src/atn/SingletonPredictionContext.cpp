@@ -7,6 +7,8 @@
 
 #include "atn/SingletonPredictionContext.h"
 
+#include <typeinfo>
+
 using namespace antlr4::atn;
 
 SingletonPredictionContext::SingletonPredictionContext(Ref<PredictionContext> const& parent, size_t returnState)
@@ -42,6 +44,32 @@ size_t SingletonPredictionContext::getReturnState(size_t index) const {
   ((void)(index)); // Make Release build happy.
   return returnState;
 }
+
+bool SingletonPredictionContext::operator < (const PredictionContext &o) const
+  {
+  const SingletonPredictionContext *other = dynamic_cast<const SingletonPredictionContext*>(&o);
+  if(other == nullptr || dynamic_cast<const EmptyPredictionContext*>(&o))
+    {
+    auto s = toString();
+    auto s1 = o.toString();
+
+    return s < s1;
+    }
+
+  if(this == other)
+    return false;
+
+  if(returnState < other->returnState)
+    return true;
+
+  if(returnState > other->returnState)
+    return false;
+
+  if (!parent || !other->parent)
+    return parent.get() < other->parent.get();
+
+  return *parent < *other->parent;
+  }
 
 bool SingletonPredictionContext::operator == (const PredictionContext &o) const {
   if (this == &o) {

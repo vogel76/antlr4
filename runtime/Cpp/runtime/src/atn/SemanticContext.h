@@ -43,12 +43,17 @@ namespace atn {
      */
     static const Ref<SemanticContext> NONE;
 
-    virtual ~SemanticContext();
+    virtual ~SemanticContext() {}
 
     virtual size_t hashCode() const = 0;
     virtual std::string toString() const = 0;
+
+    virtual bool operator < (const SemanticContext &o) const = 0;
     virtual bool operator == (const SemanticContext &other) const = 0;
-    virtual bool operator != (const SemanticContext &other) const;
+    bool operator != (const SemanticContext &other) const
+      {
+      return !(*this == other);
+      }
 
     /// <summary>
     /// For context independent predicates, we evaluate them without a local
@@ -100,7 +105,7 @@ namespace atn {
     static std::vector<Ref<PrecedencePredicate>> filterPrecedencePredicates(const Set &collection);
   };
 
-  class ANTLR4CPP_PUBLIC SemanticContext::Predicate : public SemanticContext {
+  class ANTLR4CPP_PUBLIC SemanticContext::Predicate final : public SemanticContext {
   public:
     const size_t ruleIndex;
     const size_t predIndex;
@@ -114,6 +119,7 @@ namespace atn {
 
     virtual bool eval(Recognizer *parser, RuleContext *parserCallStack) override;
     virtual size_t hashCode() const override;
+    virtual bool operator < (const SemanticContext& o) const override;
     virtual bool operator == (const SemanticContext &other) const override;
     virtual std::string toString() const override;
   };
@@ -132,6 +138,8 @@ namespace atn {
     virtual Ref<SemanticContext> evalPrecedence(Recognizer *parser, RuleContext *parserCallStack) override;
     virtual int compareTo(PrecedencePredicate *o);
     virtual size_t hashCode() const override;
+
+    virtual bool operator < (const SemanticContext& o) const override;
     virtual bool operator == (const SemanticContext &other) const override;
     virtual std::string toString() const override;
   };
@@ -144,6 +152,8 @@ namespace atn {
    */
   class ANTLR4CPP_PUBLIC SemanticContext::Operator : public SemanticContext {
   public:
+    typedef std::vector<Ref<SemanticContext>> TOperandContainer;
+
     virtual ~Operator() override;
 
     /**
@@ -155,20 +165,21 @@ namespace atn {
      * @since 4.3
      */
 
-    virtual std::vector<Ref<SemanticContext>> getOperands() const = 0;
+    virtual const TOperandContainer& getOperands() const = 0;
   };
 
   /**
    * A semantic context which is true whenever none of the contained contexts
    * is false.
    */
-  class ANTLR4CPP_PUBLIC SemanticContext::AND : public SemanticContext::Operator {
+  class ANTLR4CPP_PUBLIC SemanticContext::AND final : public SemanticContext::Operator {
   public:
     std::vector<Ref<SemanticContext>> opnds;
 
     AND(Ref<SemanticContext> const& a, Ref<SemanticContext> const& b) ;
 
-    virtual std::vector<Ref<SemanticContext>> getOperands() const override;
+    virtual const TOperandContainer& getOperands() const override;
+    virtual bool operator < (const SemanticContext& o) const override;
     virtual bool operator == (const SemanticContext &other) const override;
     virtual size_t hashCode() const override;
 
@@ -185,13 +196,14 @@ namespace atn {
    * A semantic context which is true whenever at least one of the contained
    * contexts is true.
    */
-  class ANTLR4CPP_PUBLIC SemanticContext::OR : public SemanticContext::Operator {
+  class ANTLR4CPP_PUBLIC SemanticContext::OR final : public SemanticContext::Operator {
   public:
     std::vector<Ref<SemanticContext>> opnds;
 
     OR(Ref<SemanticContext> const& a, Ref<SemanticContext> const& b);
 
-    virtual std::vector<Ref<SemanticContext>> getOperands() const override;
+    virtual const TOperandContainer& getOperands() const override;
+    virtual bool operator < (const SemanticContext& o) const override;
     virtual bool operator == (const SemanticContext &other) const override;
     virtual size_t hashCode() const override;
 

@@ -77,7 +77,7 @@ antlrcpp::BitSet DiagnosticErrorListener::getConflictingAlts(const antlrcpp::Bit
 
   antlrcpp::BitSet result;
   for (auto &config : configs->configs) {
-    result.set(config->alt);
+    result.setBit(config->alt);
   }
 
   return result;

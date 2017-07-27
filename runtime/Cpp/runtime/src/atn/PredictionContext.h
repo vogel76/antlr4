@@ -9,6 +9,8 @@
 #include "atn/ATN.h"
 #include "atn/ATNState.h"
 
+#include "misc/MurmurHash.h"
+
 namespace antlr4 {
 namespace atn {
 
@@ -75,12 +77,16 @@ namespace atn {
     virtual Ref<PredictionContext> getParent(size_t index) const = 0;
     virtual size_t getReturnState(size_t index) const = 0;
 
+    virtual bool operator < (const PredictionContext &o) const = 0;
     virtual bool operator == (const PredictionContext &o) const = 0;
 
     /// This means only the EMPTY (wildcard? not sure) context is in set.
     virtual bool isEmpty() const;
     virtual bool hasEmptyPath() const;
-    virtual size_t hashCode() const;
+    size_t hashCode() const
+      {
+      return cachedHashCode;
+      }
 
   protected:
     static size_t calculateEmptyHashCode();
@@ -236,17 +242,36 @@ namespace atn {
   public:
     Ref<PredictionContext> put(Ref<PredictionContext> const& key1, Ref<PredictionContext> const& key2,
                                Ref<PredictionContext> const& value);
-    Ref<PredictionContext> get(Ref<PredictionContext> const& key1, Ref<PredictionContext> const& key2);
+    Ref<PredictionContext> get(Ref<PredictionContext> const& key1, Ref<PredictionContext> const& key2) const;
 
     void clear();
     std::string toString() const;
     size_t count() const;
 
   private:
-    std::unordered_map<Ref<PredictionContext>,
-      std::unordered_map<Ref<PredictionContext>, Ref<PredictionContext>, PredictionContextHasher, PredictionContextComparer>,
-      PredictionContextHasher, PredictionContextComparer> _data;
+    typedef std::pair<Ref<PredictionContext>, Ref<PredictionContext>> TPrefictionContextPair;
+    class TPrefictionContextPairHash
+      {
+      public:
+        size_t operator()(const TPrefictionContextPair& p) const
+          {
+          return misc::MurmurHash::hashCode(p, 1);
+          }
+      };
 
+    class TPrefictionContextPairEqual
+      {
+      public:
+        bool operator()(const TPrefictionContextPair& a, const TPrefictionContextPair& b) const
+          {
+          PredictionContextComparer c;
+          return c(a.first, b.first) && c(a.second, b.second);
+          }
+      };
+
+    typedef std::unordered_map<TPrefictionContextPair, Ref<PredictionContext>,
+      TPrefictionContextPairHash, TPrefictionContextPairEqual> TStorage;
+    TStorage _data;
   };
 
 } // namespace atn
