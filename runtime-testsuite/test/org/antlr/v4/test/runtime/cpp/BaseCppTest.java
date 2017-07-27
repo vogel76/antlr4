@@ -550,7 +550,7 @@ public class BaseCppTest implements RuntimeTestSupport {
 		System.out.println("Building ANTLR4 C++ runtime (if necessary) at "+ runtimePath);
 
 		try {
-			String command[] = { "cmake", ".", /*"-DCMAKE_CXX_COMPILER=clang++",*/ "-DCMAKE_BUILD_TYPE=release" };
+			String command[] = { "cmake", ".", /*"-DCMAKE_CXX_COMPILER=clang++",*/ "-DCMAKE_BUILD_TYPE=Release" };
 			if (runCommand(command, runtimePath, "antlr runtime cmake", false) == null) {
 				return false;
 			}
@@ -604,7 +604,7 @@ public class BaseCppTest implements RuntimeTestSupport {
 		synchronized (runtimeBuiltOnce) {
 			if ( !runtimeBuiltOnce ) {
 				try {
-					String command[] = {"clang++", "--version"};
+					String command[] = {"c++", "--version"};
 					String output = runCommand(command, tmpdir, "printing compiler version", false);
 					System.out.println("Compiler version is: "+output);
 				}
@@ -635,8 +635,10 @@ public class BaseCppTest implements RuntimeTestSupport {
 		}
 
 		try {
-			List<String> command2 = new ArrayList<String>(Arrays.asList("clang++", "-std=c++11", "-I", includePath, "-L.", "-lantlr4-runtime", "-o", "a.out"));
+			List<String> command2 = new ArrayList<String>(Arrays.asList("c++", "-std=c++11", "-I", includePath));
 			command2.addAll(allCppFiles(tmpdir));
+			command2.addAll(Arrays.asList("-L" + runtimePath + "/dist", "-lantlr4-runtime","-o", "a.out"));
+
 			if (runCommand(command2.toArray(new String[0]), tmpdir, "building test binary", true) == null) {
 				return null;
 			}
