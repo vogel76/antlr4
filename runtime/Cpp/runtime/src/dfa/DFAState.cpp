@@ -54,7 +54,7 @@ std::set<size_t> DFAState::getAltSet() {
       alts.insert(configs->get(i)->alt);
     }
   }
-  return alts;
+  return std::move(alts);
 }
 
 size_t DFAState::hashCode() const {
@@ -63,6 +63,11 @@ size_t DFAState::hashCode() const {
   hash = misc::MurmurHash::finish(hash, 1);
   return hash;
 }
+
+bool DFAState::operator < (const DFAState& rhs) const
+  {
+  return *configs < *rhs.configs;
+  }
 
 bool DFAState::operator == (const DFAState &o) const {
   // compare set of ATN configurations in this set with other

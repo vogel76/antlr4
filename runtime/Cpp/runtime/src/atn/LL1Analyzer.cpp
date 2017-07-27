@@ -72,7 +72,7 @@ misc::IntervalSet LL1Analyzer::LOOK(ATNState *s, ATNState *stopState, RuleContex
 void LL1Analyzer::_LOOK(ATNState *s, ATNState *stopState, Ref<PredictionContext> const& ctx, misc::IntervalSet &look,
   ATNConfig::Set &lookBusy, antlrcpp::BitSet &calledRuleStack, bool seeThruPreds, bool addEOF) const {
 
-  Ref<ATNConfig> c = std::make_shared<ATNConfig>(s, 0, ctx);
+  Ref<ATNConfig> c = ATNConfig::create(s, 0, ctx);
 
   if (lookBusy.count(c) > 0) // Keep in mind comparison is based on members of the class, not the actual instance.
     return;
@@ -107,11 +107,11 @@ void LL1Analyzer::_LOOK(ATNState *s, ATNState *stopState, Ref<PredictionContext>
         bool removed = calledRuleStack.test(returnState->ruleIndex);
         auto onExit = finally([removed, &calledRuleStack, returnState] {
           if (removed) {
-            calledRuleStack.set(returnState->ruleIndex);
+            calledRuleStack.setBit(returnState->ruleIndex);
           }
         });
 
-        calledRuleStack[returnState->ruleIndex] = false;
+        calledRuleStack.clearBit(returnState->ruleIndex);
         _LOOK(returnState, stopState, ctx->getParent(i), look, lookBusy, calledRuleStack, seeThruPreds, addEOF);
       }
       return;
@@ -123,16 +123,16 @@ void LL1Analyzer::_LOOK(ATNState *s, ATNState *stopState, Ref<PredictionContext>
     Transition *t = s->transitions[i];
 
     if (t->getSerializationType() == Transition::RULE) {
-      if (calledRuleStack[(static_cast<RuleTransition*>(t))->target->ruleIndex]) {
+      if (calledRuleStack.test((static_cast<RuleTransition*>(t))->target->ruleIndex)) {
         continue;
       }
 
       Ref<PredictionContext> newContext = SingletonPredictionContext::create(ctx, (static_cast<RuleTransition*>(t))->followState->stateNumber);
       auto onExit = finally([t, &calledRuleStack] {
-        calledRuleStack[(static_cast<RuleTransition*>(t))->target->ruleIndex] = false;
+        calledRuleStack.clearBit((static_cast<RuleTransition*>(t))->target->ruleIndex);
       });
 
-      calledRuleStack.set((static_cast<RuleTransition*>(t))->target->ruleIndex);
+      calledRuleStack.setBit((static_cast<RuleTransition*>(t))->target->ruleIndex);
       _LOOK(t->target, stopState, newContext, look, lookBusy, calledRuleStack, seeThruPreds, addEOF);
 
     } else if (is<AbstractPredicateTransition *>(t)) {

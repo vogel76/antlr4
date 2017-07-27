@@ -13,6 +13,11 @@
 using namespace antlr4;
 using namespace antlr4::misc;
 
+namespace
+{
+static size_t sss = sizeof(IntervalSet);
+}
+
 IntervalSet const IntervalSet::COMPLETE_CHAR_SET = []() {
   IntervalSet complete = IntervalSet::of(Lexer::MIN_CHAR_VALUE, Lexer::MAX_CHAR_VALUE);
   complete.setReadOnly(true);
@@ -44,10 +49,6 @@ IntervalSet::IntervalSet(int n, ...) : IntervalSet() {
   for (int i = 0; i < n; i++) {
     add(va_arg(vlist, int));
   }
-}
-
-IntervalSet::~IntervalSet()
-{
 }
 
 IntervalSet& IntervalSet::operator=(const IntervalSet& other)
@@ -337,10 +338,6 @@ ssize_t IntervalSet::getMinElement() const {
   }
 
   return _intervals[0].a;
-}
-
-std::vector<Interval> IntervalSet::getIntervals() const {
-  return _intervals;
 }
 
 size_t IntervalSet::hashCode() const {

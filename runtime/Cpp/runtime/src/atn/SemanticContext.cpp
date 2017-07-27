@@ -39,6 +39,27 @@ size_t SemanticContext::Predicate::hashCode() const {
   return hashCode;
 }
 
+bool SemanticContext::Predicate::operator < (const SemanticContext& o) const
+  {
+  const Predicate *p = dynamic_cast<const Predicate*>(&o);
+  if (p == nullptr)
+    return true;
+
+  if(ruleIndex < p->ruleIndex)
+    return true;
+
+  if(ruleIndex > p->ruleIndex)
+    return false;
+
+  if(predIndex < p->predIndex)
+    return true;
+
+  if(predIndex > p->predIndex)
+    return false;
+
+  return isCtxDependent < p->isCtxDependent;
+  }
+
 bool SemanticContext::Predicate::operator == (const SemanticContext &other) const {
   if (this == &other)
     return true;
@@ -85,6 +106,16 @@ size_t SemanticContext::PrecedencePredicate::hashCode() const {
   hashCode = 31 * hashCode + static_cast<size_t>(precedence);
   return hashCode;
 }
+
+bool SemanticContext::PrecedencePredicate::operator < (const SemanticContext& o) const
+  {
+  const PrecedencePredicate *predicate = dynamic_cast<const PrecedencePredicate *>(&o);
+  if (predicate == nullptr)
+    return true;
+
+  return precedence < predicate->precedence;
+
+  }
 
 bool SemanticContext::PrecedencePredicate::operator == (const SemanticContext &other) const {
   if (this == &other)
@@ -137,9 +168,18 @@ SemanticContext::AND::AND(Ref<SemanticContext> const& a, Ref<SemanticContext> co
   std::copy(operands.begin(), operands.end(), std::back_inserter(opnds));
 }
 
-std::vector<Ref<SemanticContext>> SemanticContext::AND::getOperands() const {
+const SemanticContext::Operator::TOperandContainer& SemanticContext::AND::getOperands() const {
   return opnds;
 }
+
+bool SemanticContext::AND::operator < (const SemanticContext& o) const
+  {
+  const AND *context = dynamic_cast<const AND *>(&o);
+  if (context == nullptr)
+    return true;
+
+  return Arrays::less(opnds, context->opnds);
+  }
 
 bool SemanticContext::AND::operator == (const SemanticContext &other) const {
   if (this == &other)
@@ -239,9 +279,18 @@ SemanticContext::OR::OR(Ref<SemanticContext> const& a, Ref<SemanticContext> cons
   std::copy(operands.begin(), operands.end(), std::back_inserter(opnds));
 }
 
-std::vector<Ref<SemanticContext>> SemanticContext::OR::getOperands() const {
+const SemanticContext::Operator::TOperandContainer& SemanticContext::OR::getOperands() const {
   return opnds;
 }
+
+bool SemanticContext::OR::operator < (const SemanticContext& o) const
+  {
+  const OR *context = dynamic_cast<const OR *>(&o);
+  if (context == nullptr)
+    return true;
+
+  return Arrays::less(opnds, context->opnds);
+  }
 
 bool SemanticContext::OR::operator == (const SemanticContext &other) const {
   if (this == &other)
@@ -310,13 +359,6 @@ std::string SemanticContext::OR::toString() const {
 //------------------ SemanticContext -----------------------------------------------------------------------------------
 
 const Ref<SemanticContext> SemanticContext::NONE = std::make_shared<Predicate>(INVALID_INDEX, INVALID_INDEX, false);
-
-SemanticContext::~SemanticContext() {
-}
-
-bool SemanticContext::operator != (const SemanticContext &other) const {
-  return !(*this == other);
-}
 
 Ref<SemanticContext> SemanticContext::evalPrecedence(Recognizer * /*parser*/, RuleContext * /*parserCallStack*/) {
   return shared_from_this();

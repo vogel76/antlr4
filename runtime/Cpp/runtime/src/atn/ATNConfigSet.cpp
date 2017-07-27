@@ -15,6 +15,12 @@
 using namespace antlr4::atn;
 using namespace antlrcpp;
 
+namespace
+{
+const size_t s = sizeof(ATNConfigSet);
+const size_t s1 = sizeof(antlrcpp::BitSet);
+}
+
 ATNConfigSet::ATNConfigSet(bool fullCtx) : fullCtx(fullCtx) {
   InitializeInstanceFields();
 }
@@ -82,10 +88,10 @@ bool ATNConfigSet::addAll(const Ref<ATNConfigSet> &other) {
 
 std::vector<ATNState*> ATNConfigSet::getStates() {
   std::vector<ATNState*> states;
-  for (auto c : configs) {
+  for (const auto& c : configs) {
     states.push_back(c->state);
   }
-  return states;
+  return std::move(states);
 }
 
 /**
@@ -97,22 +103,22 @@ std::vector<ATNState*> ATNConfigSet::getStates() {
  * @since 4.3
  */
 
-BitSet ATNConfigSet::getAlts() {
+BitSet ATNConfigSet::getAlts() const {
   BitSet alts;
-  for (ATNConfig config : configs) {
-    alts.set(config.alt);
+  for (const auto& config : configs) {
+    alts.setBit(config->alt);
   }
   return alts;
 }
 
 std::vector<Ref<SemanticContext>> ATNConfigSet::getPredicates() {
   std::vector<Ref<SemanticContext>> preds;
-  for (auto c : configs) {
+  for (const auto& c : configs) {
     if (c->semanticContext != SemanticContext::NONE) {
       preds.push_back(c->semanticContext);
     }
   }
-  return preds;
+  return std::move(preds);
 }
 
 Ref<ATNConfig> ATNConfigSet::get(size_t i) const {
@@ -131,7 +137,46 @@ void ATNConfigSet::optimizeConfigs(ATNSimulator *interpreter) {
   }
 }
 
-bool ATNConfigSet::operator == (const ATNConfigSet &other) {
+bool ATNConfigSet::operator < (const ATNConfigSet &rhs) const
+  {
+  if(fullCtx < rhs.fullCtx)
+    return true;
+  if(fullCtx > rhs.fullCtx)
+    return false;
+
+  /// fullCtx == rhs.fullCtx
+
+  if(uniqueAlt < rhs.uniqueAlt)
+    return true;
+  if(uniqueAlt > rhs.uniqueAlt)
+    return false;
+
+  if(hasSemanticContext < rhs.hasSemanticContext)
+    return true;
+  if(hasSemanticContext > rhs.hasSemanticContext)
+    return false;
+  /// hasSemanticContext == rhs.hasSemanticContext
+
+  if(dipsIntoOuterContext < rhs.dipsIntoOuterContext)
+    return true;
+
+  if(dipsIntoOuterContext > rhs.dipsIntoOuterContext)
+    return false;
+
+  /// dipsIntoOuterContext == rhs.dipsIntoOuterContext
+
+  if(conflictingAlts < rhs.conflictingAlts)
+    return true;
+
+  if(rhs.conflictingAlts < conflictingAlts)
+    return false;
+
+  /// conflictingAlts == rhs.conflictingAlts
+
+  return (antlrcpp::Arrays::less(configs, rhs.configs));
+  }
+
+bool ATNConfigSet::operator == (const ATNConfigSet &other) const {
   if (&other == this) {
     return true;
   }
@@ -199,7 +244,7 @@ std::string ATNConfigSet::toString() {
     ss << ",uniqueAlt = " << uniqueAlt;
   }
 
-  if (conflictingAlts.size() > 0) {
+  if (conflictingAlts.bitCapacity() > 0) {
     ss << ",conflictingAlts = ";
     ss << conflictingAlts.toString();
   }

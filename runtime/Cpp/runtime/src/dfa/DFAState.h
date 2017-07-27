@@ -59,9 +59,7 @@ namespace dfa {
     ///  <seealso cref="Token#EOF"/> maps to {@code edges[0]}.
     // ml: this is a sparse list, so we use a map instead of a vector.
     //     Watch out: we no longer have the -1 offset, as it isn't needed anymore.
-    std::unordered_map<size_t, DFAState *> edges;
-
-    bool isAcceptState;
+    std::map<size_t, DFAState *> edges;
 
     /// if accept state, what ttype do we match or alt do we predict?
     /// This is set to <seealso cref="ATN#INVALID_ALT_NUMBER"/> when <seealso cref="#predicates"/>{@code !=null} or
@@ -77,6 +75,8 @@ namespace dfa {
     /// full context prediction if this field is true.
     /// </summary>
     bool requiresFullContext;
+
+    bool isAcceptState;
 
     /// <summary>
     /// During SLL parsing, this is a list of predicates associated with the
@@ -107,6 +107,9 @@ namespace dfa {
 
     virtual size_t hashCode() const;
 
+    /// \see operator== comment.
+    bool operator < (const DFAState& rhs) const;
+
     /// Two DFAState instances are equal if their ATN configuration sets
     /// are the same. This method is used to see if a state already exists.
     ///
@@ -133,6 +136,13 @@ namespace dfa {
       bool operator()(DFAState *lhs, DFAState *rhs) const
       {
         return *lhs == *rhs;
+      }
+    };
+
+    struct Less {
+      bool operator()(DFAState *lhs, DFAState *rhs) const
+      {
+        return *lhs < *rhs;
       }
     };
 

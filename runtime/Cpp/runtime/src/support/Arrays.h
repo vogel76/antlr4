@@ -19,26 +19,95 @@ namespace antlrcpp {
       if (a.size() != b.size())
         return false;
 
-      for (size_t i = 0; i < a.size(); ++i)
-        if (!(a[i] == b[i]))
-          return false;
-
-      return true;
+      return std::equal(a.cbegin(), a.cend(), b.cbegin());
     }
+
+    template <typename T, size_t S>
+    static bool equals(const std::array<T, S> &a, const std::array<T, S> &b) {
+      return std::equal(a.cbegin(), a.cend(), b.cbegin());
+    }
+
+    template <typename T>
+    static bool less(const std::vector<T> &a, const std::vector<T> &b) {
+      return std::lexicographical_compare(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+        std::less<T>());
+    }
+
+    template <typename T, size_t S>
+    static bool less(const std::array<T, S>& a, const std::array<T, S>& b)
+      {
+      return std::lexicographical_compare(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+        std::less<T>());
+      }
+
+    template <typename T>
+    static bool less(const std::vector<Ref<T>>& a, const std::vector<Ref<T>>& b)
+      {
+      return std::lexicographical_compare(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+        is_less_ref<T>());
+      }
+
+    template <typename T, size_t S>
+    static bool less(const std::array<Ref<T>, S>& a, const std::array<Ref<T>, S>& b)
+      {
+      return std::lexicographical_compare(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+        is_less_ref<T>());
+      }
+
+    template <class T>
+    struct is_less_ptr
+      {
+      bool operator()(const T* ptr1, const T* ptr2) const
+        {
+        std::less<T> op;
+        return op(*ptr1, *ptr2);
+        }
+      };
+
+    template <class T>
+    struct is_less_ref
+      {
+      bool operator()(const Ref<T>& ptr1, const Ref<T>& ptr2) const
+        {
+        std::less<T> op;
+        return op(*ptr1.get(), *ptr2.get());
+        }
+      };
+
+    template <class T>
+    struct is_equal_ptr
+      {
+      bool operator()(const T* ptr1, const T* ptr2) const
+        {
+        if(ptr1 == ptr2)
+          return true;
+
+        return *ptr1 == *ptr2;
+        }
+      };
+
+    template <class T>
+    struct is_equal_ref
+      {
+      bool operator()(const Ref<T>& a, const Ref<T>& b) const
+        {
+        if (!a && !b)
+          return true;
+        if (!a || !b)
+          return false;
+        if (a == b)
+          return true;
+
+        return *a == *b;
+        }
+      };
 
     template <typename T>
     static bool equals(const std::vector<T *> &a, const std::vector<T *> &b) {
       if (a.size() != b.size())
         return false;
 
-      for (size_t i = 0; i < a.size(); ++i) {
-        if (a[i] == b[i])
-          continue;
-        if (!(*a[i] == *b[i]))
-          return false;
-      }
-
-      return true;
+      return std::equal(a.cbegin(), a.cend(), b.cbegin(), is_equal_ptr<T>());
     }
 
     template <typename T>
@@ -46,19 +115,15 @@ namespace antlrcpp {
       if (a.size() != b.size())
         return false;
 
-      for (size_t i = 0; i < a.size(); ++i) {
-        if (!a[i] && !b[i])
-          continue;
-        if (!a[i] || !b[i])
-          return false;
-        if (a[i] == b[i])
-          continue;
+      return std::equal(a.cbegin(), a.cend(), b.cbegin(), is_equal_ref<T>());
+    }
 
-        if (!(*a[i] == *b[i]))
-          return false;
-      }
+    template <typename T, size_t S>
+    static bool equals(const std::array<Ref<T>, S> &a, const std::array<Ref<T>, S> &b) {
+      if (a.size() != b.size())
+        return false;
 
-      return true;
+      return std::equal(a.cbegin(), a.cend(), b.cbegin(), is_equal_ref<T>());
     }
 
     template <typename T>
