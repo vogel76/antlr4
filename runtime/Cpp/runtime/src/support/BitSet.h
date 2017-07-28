@@ -14,6 +14,7 @@
 namespace antlrcpp 
 {
 
+/// Probably best would be to base this class on boost::dynamic_bitset.
 class ANTLR4CPP_PUBLIC BitSet final : protected std::vector<bool>
   {
 public:
@@ -50,13 +51,18 @@ public:
     if(_Right.size() > size())
       resize(_Right.size());
 
+#ifdef _MSC_VER
     for(size_t i = 0; i < this->_Myvec.size(); ++i)
       {
       auto& word = this->_Myvec[i];
       const auto& word1 = _Right._Myvec[i];
       word |= word1;
       }
-
+#else
+   for(size_t i = 0; i < size(); ++i)
+     if(_Right[i])
+       (*this)[i] = true;
+#endif
     return *this;
     }
 
@@ -88,6 +94,8 @@ public:
   size_t count() const
     {
     unsigned int setBits = 0;
+
+#ifdef _MSC_VER
     for(size_t i = 0; i < this->_Myvec.size(); ++i)
       {
       auto v = this->_Myvec[i];
@@ -97,6 +105,10 @@ public:
 
       setBits += c;
       }
+#else
+   for(const auto& b : *this)
+     if(b) ++setBits;
+#endif
 
     return setBits;
     }

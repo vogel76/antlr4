@@ -560,7 +560,7 @@ public class BaseCppTest implements RuntimeTestSupport {
 		}
 
 		try {
-			String command[] = { "make", "-j", "8" }; // Assuming a reasonable amount of available CPU cores.
+			String command[] = { "make", "-j", "8", "antlr4_shared" }; // Assuming a reasonable amount of available CPU cores.
 			if (runCommand(command, runtimePath, "building antlr runtime", true) == null)
 				return false;
 		}

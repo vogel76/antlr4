@@ -9,6 +9,7 @@
 #include "atn/ArrayPredictionContext.h"
 
 #include <array>
+#include <memory>
 
 using namespace antlr4::atn;
 
@@ -242,8 +243,8 @@ class TBuilder<0, 0> final : public ABuilder
 
     virtual ~TBuilder()
       {
-      printf("MaxParents: %lu\n", maxMaxParents);
-      printf("MaxReturnStates: %lu\n", maxReturnStates);
+//      printf("MaxParents: %lu\n", maxMaxParents);
+//      printf("MaxReturnStates: %lu\n", maxReturnStates);
       }
 
     size_t maxMaxParents = 0;
@@ -259,7 +260,7 @@ const size_t s3 = sizeof(ArrayPredictionContextImpl<StaticArrayPredictionContext
 enum
   {
   MAX_PARENT_SIZE = 32,
-  MAX_RETURN_STATE_SIZE = 64,
+  MAX_RETURN_STATE_SIZE = 32, //64,
   TOTAL = MAX_RETURN_STATE_SIZE * MAX_PARENT_SIZE
   };
 
